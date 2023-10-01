@@ -1,14 +1,14 @@
 package odogwudozilla.scrapers.helperClasses;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gargoylesoftware.htmlunit.HttpMethod;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -23,10 +23,11 @@ public class CommonUtils {
             + "src" + File.separator
             + "main" + File.separator
             + "resources" + File.separator;
-    public static void createFileOrDirectoryIfNotExists(String path) {
-        File fileOrDir = new File(RESOURCE_DIRECTORY_PATH + path);
 
-        if (!fileOrDir.exists()) {
+    public static void createFileOrDirectoryIfNotExists(String path) {
+        File fileOrDir = new File(appendResourcePath(path));
+
+        if (!fileExists(path)) {
             try {
                 if (path.endsWith(File.separator)) {
                     // If the path ends with a separator, it's a directory
@@ -45,21 +46,11 @@ public class CommonUtils {
         }
     }
 
-    public static void saveJsonFile(byte[] jsonData, String filePath) {
-        try {
-            // Copy the JSON data from the byte array to the file, replacing it if it exists
-            Path destination = Path.of(RESOURCE_DIRECTORY_PATH + filePath);
-            Files.copy(new ByteArrayInputStream(jsonData), destination, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("JSON data saved to: " + filePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static void saveJsonData(String sourceFile, String fileDirectory, boolean fromUrl) throws IOException {
         WebClient webClient = new WebClient();
         String jsonResponse;
-        fileDirectory = RESOURCE_DIRECTORY_PATH + fileDirectory;
+        fileDirectory = appendResourcePath(fileDirectory);
+
         if (fromUrl) {
             jsonResponse = getJsonData(webClient, sourceFile);
         } else {
@@ -69,13 +60,44 @@ public class CommonUtils {
             fileWriter.write(jsonResponse);
         }
     }
+
+    public static String readTextOrJsonFile(String filePath) throws IOException {
+        byte[] bytes = Files.readAllBytes(Path.of(appendResourcePath(filePath)));
+        return new String(bytes);
+    }
+
     public static String getJsonData(WebClient webClient, String apiUrl) throws IOException {
-        webClient = initialise(webClient);
         WebRequest request = new WebRequest(new java.net.URL(apiUrl));
         request.setHttpMethod(HttpMethod.GET);
         WebResponse response  = webClient.loadWebResponse(request);
         return response.getContentAsString();
     }
+
+
+    public static JsonNode readJsonData(String source, boolean isFilePath) {
+        JsonNode fileRootNode = null;
+        try {
+            // Create an ObjectMapper object to read JSON data from the file
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            if (isFilePath) {
+                // Read JSON data from the file and parse it into a JsonNode object
+                try (InputStream inputStream = CommonUtils.class.getClassLoader().getResourceAsStream(source)) {
+                    fileRootNode = objectMapper.readTree(inputStream);
+                }
+            } else {
+                // Read JSON data from the source string and parse it into a JsonNode object
+                fileRootNode = objectMapper.readTree(source);
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return fileRootNode;
+    }
+
 
     private static WebClient initialise(WebClient webClient) {
         // disable javascript
@@ -86,5 +108,13 @@ public class CommonUtils {
         webClient.setCssErrorHandler(new SilentCssErrorHandler());
 
         return webClient;
+    }
+
+    public static String appendResourcePath(String filePath) {
+        return RESOURCE_DIRECTORY_PATH + filePath;
+    }
+
+    public static boolean fileExists(String filePath) {
+        return new File(appendResourcePath(filePath)).exists();
     }
 }

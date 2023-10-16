@@ -17,12 +17,19 @@ import com.gargoylesoftware.htmlunit.WebResponse;
 
 public class CommonUtils {
     // Get the project's base directory (the location of the pom.xml file in a maven project, for instance)
-    public static  final String PROJECT_BASE_DIRECTORY = System.getProperty("user.dir");
-    // Get the resource directory path
-    public static final String RESOURCE_DIRECTORY_PATH = PROJECT_BASE_DIRECTORY + File.separator
+    public static final String PROJECT_BASE_DIRECTORY = System.getProperty("user.dir")  + File.separator
             + "src" + File.separator
-            + "main" + File.separator
+            + "main" + File.separator;
+
+    private static boolean useResourcePath = true;
+
+    // The resource directory path
+    public static final String RESOURCE_DIRECTORY_PATH = PROJECT_BASE_DIRECTORY + File.separator
             + "resources" + File.separator;
+
+    // The resource directory path
+    public static final String MAIN_DIR_PATH = PROJECT_BASE_DIRECTORY + File.separator
+            + "java" + File.separator;
 
     public static void createFileOrDirectoryIfNotExists(String path) {
         File fileOrDir = new File(appendResourcePath(path));
@@ -47,14 +54,15 @@ public class CommonUtils {
     }
 
     public static void saveJsonData(String sourceFile, String fileDirectory, boolean fromUrl) throws IOException {
-        WebClient webClient = new WebClient();
         String jsonResponse;
-        fileDirectory = appendResourcePath(fileDirectory);
+        try (WebClient webClient = new WebClient()) {
+            fileDirectory = appendResourcePath(fileDirectory);
 
-        if (fromUrl) {
-            jsonResponse = getJsonData(webClient, sourceFile);
-        } else {
-            jsonResponse = sourceFile;
+            if (fromUrl) {
+                jsonResponse = getJsonData(webClient, sourceFile);
+            } else {
+                jsonResponse = sourceFile;
+            }
         }
         try (FileWriter fileWriter = new FileWriter(fileDirectory)) {
             fileWriter.write(jsonResponse);
@@ -111,10 +119,19 @@ public class CommonUtils {
     }
 
     public static String appendResourcePath(String filePath) {
-        return RESOURCE_DIRECTORY_PATH + filePath;
+        return useResourcePath ? RESOURCE_DIRECTORY_PATH + filePath :
+        MAIN_DIR_PATH + filePath;
     }
 
     public static boolean fileExists(String filePath) {
         return new File(appendResourcePath(filePath)).exists();
+    }
+
+    public static boolean isUseResourcePath() {
+        return useResourcePath;
+    }
+
+    public static void setUseResourcePath(boolean useResourcePath) {
+        CommonUtils.useResourcePath = useResourcePath;
     }
 }

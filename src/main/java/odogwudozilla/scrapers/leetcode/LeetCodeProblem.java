@@ -8,8 +8,8 @@ public class LeetCodeProblem {
     private String problemDifficulty;
     private String problemTitle;
     private String problemTitleSlug;
-
-    private String problemSolutionMethod;
+    private String problemClassBody;
+    private String problemClassName;
 
     // Create an HTML string to store the contents
     private  StringBuilder htmlString;
@@ -95,12 +95,20 @@ public class LeetCodeProblem {
         this.htmlString = htmlString;
     }
 
-    public String getProblemSolutionMethod() {
-        return problemSolutionMethod;
+    public String getProblemClassBody() {
+        return problemClassBody;
     }
 
-    public void setProblemSolutionMethod(String problemSolutionMethod) {
-        this.problemSolutionMethod = problemSolutionMethod;
+    public void setProblemClassBody(String problemClassBody) {
+        this.problemClassBody = problemClassBody;
+    }
+
+    public String getProblemClassName() {
+        return problemClassName;
+    }
+
+    public void setProblemClassName(String problemClassName) {
+        this.problemClassName = problemClassName;
     }
 
 }

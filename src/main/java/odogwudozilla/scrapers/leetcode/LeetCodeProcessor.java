@@ -1,5 +1,7 @@
 package odogwudozilla.scrapers.leetcode;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -10,16 +12,17 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import odogwudozilla.scrapers.helperClasses.CommonUtils;
 
+import static odogwudozilla.scrapers.helperClasses.CommonUtils.appendResourcePath;
 import static odogwudozilla.scrapers.helperClasses.CommonUtils.createFileOrDirectoryIfNotExists;
 import static odogwudozilla.scrapers.helperClasses.CommonUtils.readJsonData;
 import static odogwudozilla.scrapers.helperClasses.CommonUtils.readTextOrJsonFile;
 import static odogwudozilla.scrapers.helperClasses.CommonUtils.saveJsonData;
+import static odogwudozilla.scrapers.helperClasses.CommonUtils.setUseResourcePath;
 import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM;
 import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEMS_LIST;
 import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEMS_TOTAL;
@@ -47,6 +50,7 @@ public class LeetCodeProcessor {
     private static final Logger log = Logger.getLogger(LeetCodeProcessor.class.getName());
 
     public LeetCodeProcessor() {
+        // empty for now
     }
 
     public static void main(String[] args) throws IOException {
@@ -67,7 +71,7 @@ public class LeetCodeProcessor {
 
         JsonNode algorithmsNode = readJsonData(apiFilePath, true);
         if (problemsCounter < algorithmsNode.get(PROBLEMS_TOTAL.code).asInt()) {
-            // replace the existing algorithms file only if the leetcode api size is greater than the local  version.
+            // replace the existing algorithms file only if the leetcode api size is greater than the local version.
             String pageUrl = API_BASE_URL;
             saveJsonData(pageUrl, apiFilePath, true);
         }
@@ -98,10 +102,7 @@ public class LeetCodeProcessor {
             problem.setProblemDifficultyLevel(currentProblemNode.get(PROBLEM_DIFFICULTY.code).get(PROBLEM_DIFFICULTY_LEVEL.code).asInt());
             problem.setProblemDifficulty(problem.translateDifficultyIdToText(problem.getProblemDifficultyLevel()));
 
-            if (!downloadProblem(problem.getProblemTitleSlug())) {
-                // handle error
-                return false;
-            }
+            downloadProblem(problem.getProblemTitleSlug());
 
             writeProblemToClass();
 
@@ -111,11 +112,48 @@ public class LeetCodeProcessor {
     }
 
     private void writeProblemToClass() {
+        setUseResourcePath(false);
+        problem.setProblemClassName(problem.getProblemTitle().replace(" ", ""));
+        String problemDirectoryPath = "odogwudozilla/scrapers/" + PROBLEMS_DIR + problem.getProblemDifficulty().toLowerCase() + "/";
+        String problemFilePath = problemDirectoryPath + problem.getProblemClassName() + ".java";
+        createFileOrDirectoryIfNotExists(problemFilePath);
+        String classContent = constructClassContent();
+        // Write the class content to the specified output file
+        problemFilePath = appendResourcePath(problemFilePath);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(problemFilePath))) {
+            writer.write(classContent);
+            System.out.println("Problem class written to " + problemFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
+    private String constructClassContent() {
+        String packageStatement = "package " + LeetCodeProcessor.class.getPackage().getName() + ".problems." + problem.getProblemDifficulty().toLowerCase() + ";";
+        StringBuilder commentLines = new StringBuilder("/**\n");
+        for (String line : problem.getHtmlString().toString().split("\r?\n")) {
+            commentLines.append(" *").append(line).append("\n");
+        }
+        commentLines.append(" */");
+
+        String classDeclaration = "public class " +
+                problem.getProblemClassName() +
+                " {";
+
+        String mainMethod = """
+                        public static void main(String[] args) {
+                            System.out.println("Hello, World!");
+                        }""";
+
+        return packageStatement + "\n\n" +
+                commentLines + "\n\n" +
+                classDeclaration + "\n\n" +
+                mainMethod + "\n\n" +
+                problem.getProblemClassBody() + "\n}";
     }
 
 
-    private boolean downloadProblem(String questionTitleSlug) {
+    private void downloadProblem(String questionTitleSlug) {
         WebDriver chromeDriver = new ChromeDriver();
         WebDriverWait wait = new WebDriverWait(chromeDriver, Duration.ofSeconds(10));
         String pageUrl = ALGORITHMS_BASE_URL + questionTitleSlug;
@@ -135,50 +173,42 @@ public class LeetCodeProcessor {
             htmlString.append(elementHtml);
         }
 
-
         // Locate and click the button to open the dropdown
-        WebElement dropdownButton = chromeDriver.findElement(By.id("headlessui-listbox-button-:r2e:"));
+        WebElement dropdownClass = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.relative.notranslate")));
+        WebElement dropdownButton = dropdownClass.findElement(By.tagName("button"));
         dropdownButton.click();
 
-        // Locate the dropdown list (ul) by its ID
-        //WebElement dropdownList = chromeDriver.findElement(By.id("headlessui-listbox-options-:r30:"));
-
-        // Locate the desired option (li) by its ID "headlessui-listbox-option-:r32:"
-        WebElement javaOption = chromeDriver.findElement(By.id("headlessui-listbox-option-:r32:"));
-
+        // Locate the <div> element with the text "Java" using XPath
+        WebElement javaOption = chromeDriver.findElement(By.xpath("//div[@class='whitespace-nowrap' and text()='Java']"));
         // Click the Java option to select it
         javaOption.click();
+        // Explicitly wait for the div element to be present
+        waitUntil(wait, Duration.ofSeconds(10));
 
-        /// Explicitly wait for the div element to be present
-        WebElement divElement1 = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.view-lines")));
-        StringBuilder solutionMethod = new StringBuilder(16);
+        StringBuilder classBody = new StringBuilder(16);
 
         // Locate the top-level <div class="view-lines">
-        WebElement viewLinesElement = chromeDriver.findElement(By.cssSelector("div.view-lines"));
+        WebElement viewLinesElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.view-lines")));
 
         // Locate all <div class="view-line"> elements within the top-level div
         List<WebElement> viewLineElements = viewLinesElement.findElements(By.cssSelector("div.view-line"));
 
-        // Check if there is a second <div class="view-line"> element
-        if (viewLineElements.size() >= 2) {
-            // Get the second <div class="view-line"> element (index 1 in the list)
-            WebElement secondViewLineElement = viewLineElements.get(1);
-
+        for (WebElement secondViewLineElement : viewLineElements) {
             // Locate all <span> elements with class names starting with 'mtk' within the second <div>
             List<WebElement> spanElements = secondViewLineElement.findElements(By.cssSelector("span[class^='mtk']"));
-
-
-            // Iterate through the list of span elements and print their text
+            StringBuilder concatSpanText = new StringBuilder(16);
             for (WebElement span : spanElements) {
                 String spanText = span.getText();
-                solutionMethod.append(spanText);
+                concatSpanText.append(spanText);
             }
-            // Close the curly brackets
-            solutionMethod.append("\n }");
+            if (concatSpanText.toString().contains("class")) continue;
+            classBody.append("//").append(concatSpanText);
+            classBody.append("\n");
         }
 
-        System.out.println(solutionMethod);
-        problem.setProblemSolutionMethod(solutionMethod.toString());
+
+        System.out.println(classBody);
+        problem.setProblemClassBody(classBody.toString());
 
         htmlString.append("</body></html>");
         problem.setHtmlString(htmlString);
@@ -186,6 +216,18 @@ public class LeetCodeProcessor {
         log.info("Problem page '" + questionTitleSlug + "' retrieved");
 
         chromeDriver.quit();
-        return true;
+    }
+
+    private void waitUntil(WebDriverWait wait, Duration duration) {
+        // Wait for a custom condition (e.g., wait for 5 seconds)
+        wait.until(driver1 -> {
+            try {
+                Thread.sleep(duration.toMillis()); // Sleep for the duration
+                return true; // Return true after waiting for the duration
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        });
     }
 }

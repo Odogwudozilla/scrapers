@@ -3,13 +3,15 @@ package odogwudozilla.scrapers.leetcode;
 
 public class LeetCodeProblem {
     private Integer problemId;
-    private Integer frontEndProblemId;
-    private Integer problemDifficultyLevel;
-    private String problemDifficulty;
-    private String problemTitle;
-    private String problemTitleSlug;
-    private String problemClassBody;
-    private String problemClassName;
+    private Integer frontEndId;
+    private Integer difficultyLevel;
+    private String difficultyLevelName;
+    private String title;
+    private String titleSlug;
+    private String classBody;
+    private String className;
+    private String classFileLocation;
+    private String textFileLocation;
 
     // Create an HTML string to store the contents
     private  StringBuilder htmlString;
@@ -47,44 +49,44 @@ public class LeetCodeProblem {
         this.problemId = problemId;
     }
 
-    public Integer getFrontEndProblemId() {
-        return frontEndProblemId;
+    public Integer getFrontEndId() {
+        return frontEndId;
     }
 
-    public void setFrontEndProblemId(Integer frontEndProblemId) {
-        this.frontEndProblemId = frontEndProblemId;
+    public void setFrontEndId(Integer frontEndId) {
+        this.frontEndId = frontEndId;
     }
 
-    public Integer getProblemDifficultyLevel() {
-        return problemDifficultyLevel;
+    public Integer getDifficultyLevel() {
+        return difficultyLevel;
     }
 
-    public void setProblemDifficultyLevel(Integer problemDifficultyLevel) {
-        this.problemDifficultyLevel = problemDifficultyLevel;
+    public void setDifficultyLevel(Integer difficultyLevel) {
+        this.difficultyLevel = difficultyLevel;
     }
 
-    public String getProblemDifficulty() {
-        return problemDifficulty;
+    public String getDifficultyLevelName() {
+        return difficultyLevelName;
     }
 
-    public void setProblemDifficulty(String problemDifficulty) {
-        this.problemDifficulty = problemDifficulty;
+    public void setDifficultyLevelName(String difficultyLevelName) {
+        this.difficultyLevelName = difficultyLevelName;
     }
 
-    public String getProblemTitle() {
-        return problemTitle;
+    public String getTitle() {
+        return title;
     }
 
-    public void setProblemTitle(String problemTitle) {
-        this.problemTitle = problemTitle;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public String getProblemTitleSlug() {
-        return problemTitleSlug;
+    public String getTitleSlug() {
+        return titleSlug;
     }
 
-    public void setProblemTitleSlug(String problemTitleSlug) {
-        this.problemTitleSlug = problemTitleSlug;
+    public void setTitleSlug(String titleSlug) {
+        this.titleSlug = titleSlug;
     }
 
     public StringBuilder getHtmlString() {
@@ -95,20 +97,36 @@ public class LeetCodeProblem {
         this.htmlString = htmlString;
     }
 
-    public String getProblemClassBody() {
-        return problemClassBody;
+    public String getClassBody() {
+        return classBody;
     }
 
-    public void setProblemClassBody(String problemClassBody) {
-        this.problemClassBody = problemClassBody;
+    public void setClassBody(String classBody) {
+        this.classBody = classBody;
     }
 
-    public String getProblemClassName() {
-        return problemClassName;
+    public String getClassName() {
+        return className;
     }
 
-    public void setProblemClassName(String problemClassName) {
-        this.problemClassName = problemClassName;
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getClassFileLocation() {
+        return classFileLocation;
+    }
+
+    public void setClassFileLocation(String classFileLocation) {
+        this.classFileLocation = classFileLocation;
+    }
+
+    public String getTextFileLocation() {
+        return textFileLocation;
+    }
+
+    public void setTextFileLocation(String textFileLocation) {
+        this.textFileLocation = textFileLocation;
     }
 
 }

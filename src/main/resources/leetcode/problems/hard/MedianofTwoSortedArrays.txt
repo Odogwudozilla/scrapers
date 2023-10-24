@@ -1,6 +1,10 @@
 package odogwudozilla.scrapers.leetcode.problems.hard;
 
 /**
+ *<h2>No. 4: Median of Two Sorted Arrays</h2>
+ *Link: <em><a href="https://leetcode.com/problems/median-of-two-sorted-arrays">Median of Two Sorted Arrays</a></em>
+ *Difficulty: <strong>Hard</strong><hr>
+
  *<html><body><p>Given two sorted arrays <code>nums1</code> and <code>nums2</code> of size <code>m</code> and <code>n</code> respectively, return <strong>the median</strong> of the two sorted arrays.</p><p>The overall run time complexity should be <code>O(log (m+n))</code>.</p><p>&nbsp;</p><p><strong class="example">Example 1:</strong></p><pre><strong>Input:</strong> nums1 = [1,3], nums2 = [2]
  *<strong>Output:</strong> 2.00000
  *<strong>Explanation:</strong> merged array = [1,2,3] and median is 2.

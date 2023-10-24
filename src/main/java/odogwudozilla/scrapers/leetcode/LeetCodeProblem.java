@@ -12,6 +12,7 @@ public class LeetCodeProblem {
     private String className;
     private String classFileLocation;
     private String textFileLocation;
+    private String directUrl;
 
     // Create an HTML string to store the contents
     private  StringBuilder htmlString;
@@ -127,6 +128,14 @@ public class LeetCodeProblem {
 
     public void setTextFileLocation(String textFileLocation) {
         this.textFileLocation = textFileLocation;
+    }
+
+    public String getDirectUrl() {
+        return directUrl;
+    }
+
+    public void setDirectUrl(String directUrl) {
+        this.directUrl = directUrl;
     }
 
 }

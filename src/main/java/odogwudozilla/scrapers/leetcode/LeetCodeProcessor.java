@@ -34,7 +34,7 @@ import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_QUESTION_TIT
 
 
 public class LeetCodeProcessor {
-    static final String ALGORITHMS_BASE_URL = "https://leetcode.com/problems/";
+    static final String PROBLEMS_BASE_URL = "https://leetcode.com/problems/";
     static final String API_BASE_URL = "https://leetcode.com/api/problems/algorithms/";
     static final String PROBLEMS_DIR = "leetcode/problems/";
     static final String API_FILE_DIR = "leetcode/algorithms/";
@@ -101,15 +101,15 @@ public class LeetCodeProcessor {
             problem.setDifficultyLevel(currentProblemNode.get(PROBLEM_DIFFICULTY.code).get(PROBLEM_DIFFICULTY_LEVEL.code).asInt());
             problem.setDifficultyLevelName(problem.translateDifficultyIdToText(problem.getDifficultyLevel()));
             problem.setClassName(problem.getTitle().replace(" ", ""));
-            String problemDirectoryForTextFile = PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/";
-            problem.setTextFileLocation(problemDirectoryForTextFile + problem.getClassName() + ".txt");
+            problem.setDirectUrl(PROBLEMS_BASE_URL + problem.getTitleSlug());
+            problem.setTextFileLocation(PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/" + problem.getClassName() + ".txt");
 
-            if (fileExists(problem.getTextFileLocation())) {
-                // This problem is already processed. Skip to the next.
-                log.info("File '" + problem.getTextFileLocation() + "' already exists. Skipping to the next");
-                counter++;
-                continue;
-            }
+//            if (fileExists(problem.getTextFileLocation())) {
+//                // This problem is already processed. Skip to the next.
+//                log.info("File '" + problem.getTextFileLocation() + "' already exists. Skipping to the next");
+//                counter++;
+//                continue;
+//            }
 
             downloadProblem();
 
@@ -149,12 +149,19 @@ public class LeetCodeProcessor {
 
     private String constructClassContent() {
         String packageStatement = "package " + LeetCodeProcessor.class.getPackage().getName() + ".problems." + problem.getDifficultyLevelName().toLowerCase() + ";";
-        // Put the htmlString in comments
-        StringBuilder commentLines = new StringBuilder("/**\n");
+
+        String titleSection = " *<h2>" + "No. " + problem.getFrontEndId() + ": " + problem.getTitle() + "</h2>\n" +
+                              " *" + "Link: <em><a href=\"" + problem.getDirectUrl() + "\">" + problem.getTitle() + "</a></em>\n" +
+                              " *" + "Difficulty: <strong>" + problem.getDifficultyLevelName() + "</strong>" +
+                              "<hr>\n\n";
+
+        // Put the title and htmlString in comments
+        StringBuilder commentLines = new StringBuilder("/**\n").append(titleSection);
         for (String line : problem.getHtmlString().toString().split("\r?\n")) {
             commentLines.append(" *").append(line).append("\n");
         }
         commentLines.append(" */");
+
         // Build the class declaration
         String classDeclaration = "public class " +
                                   problem.getClassName() +
@@ -175,10 +182,9 @@ public class LeetCodeProcessor {
 
     private void downloadProblem() {
         WebDriver chromeDriver = new ChromeDriver();
-        WebDriverWait wait = new WebDriverWait(chromeDriver, Duration.ofSeconds(10));
-        String pageUrl = ALGORITHMS_BASE_URL + problem.getTitleSlug();
+        WebDriverWait wait = new WebDriverWait(chromeDriver, Duration.ofSeconds(5));
         //Open the page in Chrome
-        chromeDriver.get(pageUrl);
+        chromeDriver.get(problem.getDirectUrl());
 
         // Create an HTML string to store the contents
         StringBuilder htmlString = new StringBuilder("<html><body>");
@@ -206,7 +212,7 @@ public class LeetCodeProcessor {
         // Click the Java option to select it
         javaOption.click();
         // Explicitly wait for 10 seconds to ensure the effect of the click is loaded (i.e, the Java workspace)
-        waitUntil(wait, Duration.ofSeconds(10));
+        waitUntil(wait, Duration.ofSeconds(5));
 
         StringBuilder classBody = new StringBuilder(16);
 

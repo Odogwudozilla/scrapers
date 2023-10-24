@@ -1,6 +1,10 @@
 package odogwudozilla.scrapers.leetcode.problems.medium;
 
 /**
+ *<h2>No. 6: Zigzag Conversion</h2>
+ *Link: <em><a href="https://leetcode.com/problems/zigzag-conversion">Zigzag Conversion</a></em>
+ *Difficulty: <strong>Medium</strong><hr>
+
  *<html><body><p>The string <code>"PAYPALISHIRING"</code> is written in a zigzag pattern on a given number of rows like this: (you may want to display this pattern in a fixed font for better legibility)</p><pre>P   A   H   N
  *A P L S I I G
  *Y   I   R

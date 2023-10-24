@@ -1,6 +1,10 @@
 package odogwudozilla.scrapers.leetcode.problems.medium;
 
 /**
+ *<h2>No. 2: Add Two Numbers</h2>
+ *Link: <em><a href="https://leetcode.com/problems/add-two-numbers">Add Two Numbers</a></em>
+ *Difficulty: <strong>Medium</strong><hr>
+
  *<html><body><p>You are given two <strong>non-empty</strong> linked lists representing two non-negative integers. The digits are stored in <strong>reverse order</strong>, and each of their nodes contains a single digit. Add the two numbers and return the sum&nbsp;as a linked list.</p><p>You may assume the two numbers do not contain any leading zero, except the number 0 itself.</p><p>&nbsp;</p><p><strong class="example">Example 1:</strong></p><pre><strong>Input:</strong> l1 = [2,4,3], l2 = [5,6,4]
  *<strong>Output:</strong> [7,0,8]
  *<strong>Explanation:</strong> 342 + 465 = 807.

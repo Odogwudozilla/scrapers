@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.inecIrev;
+package odogwudozilla.inecIrev;
 
 import java.io.File;
 import java.io.FileOutputStream;

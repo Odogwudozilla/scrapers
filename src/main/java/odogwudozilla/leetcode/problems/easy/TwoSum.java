@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.leetcode.problems.easy;
+package odogwudozilla.leetcode.problems.easy;
 
 /**
  *<h2>No. 1: Two Sum</h2>

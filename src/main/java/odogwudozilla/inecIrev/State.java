@@ -1,10 +1,9 @@
-package odogwudozilla.scrapers.inecIrev;
+package odogwudozilla.inecIrev;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import odogwudozilla.scrapers.inecIrev.LocalGovt;
 
 public class State {
 

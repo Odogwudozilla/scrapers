@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.inecIrev;
+package odogwudozilla.inecIrev;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -8,7 +8,6 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import odogwudozilla.scrapers.inecIrev.ElectionWard;
 
 public class PollingUnit extends ElectionWard {
 

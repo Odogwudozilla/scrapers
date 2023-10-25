@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.leetcode;
+package odogwudozilla.leetcode;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -13,24 +13,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
-import static odogwudozilla.scrapers.helperClasses.CommonUtils.createFileOrDirectoryIfNotExists;
-import static odogwudozilla.scrapers.helperClasses.CommonUtils.fileExists;
-import static odogwudozilla.scrapers.helperClasses.CommonUtils.readJsonData;
-import static odogwudozilla.scrapers.helperClasses.CommonUtils.readTextOrJsonFile;
-import static odogwudozilla.scrapers.helperClasses.CommonUtils.saveJsonData;
-import static odogwudozilla.scrapers.helperClasses.CommonUtils.setUseResourcePath;
-import static odogwudozilla.scrapers.helperClasses.CommonUtils.writeToFile;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEMS_LIST;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEMS_TOTAL;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_DIFFICULTY;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_DIFFICULTY_LEVEL;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_IS_PAID;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_QUESTION_ID;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_QUESTION_ID_FRONTEND;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_QUESTION_TITLE;
-import static odogwudozilla.scrapers.leetcode.LeetCodeEnums.PROBLEM_QUESTION_TITLE_SLUG;
+import odogwudozilla.helperClasses.CommonUtils;
 
 
 public class LeetCodeProcessor {
@@ -41,8 +24,8 @@ public class LeetCodeProcessor {
     static final String API_FILE_NAME = "algorithms.json";
     private static final String PROBLEMS_COUNTER_FILE_NAME = "problemsCounter.txt";
     private Integer problemsCounter;
-    private static final String problemsCounterPath = API_FILE_DIR + PROBLEMS_COUNTER_FILE_NAME;
-    private static Integer totalProblemsForDownload;
+    private static final String PROBLEMS_COUNTER_PATH = API_FILE_DIR + PROBLEMS_COUNTER_FILE_NAME;
+    private Integer totalProblemsForDownload;
     private JsonNode problemsList;
     private LeetCodeProblem problem;
     private static final Logger log = Logger.getLogger(LeetCodeProcessor.class.getName());
@@ -58,25 +41,25 @@ public class LeetCodeProcessor {
     }
 
     private void retrieveApiJson() throws IOException {
-        createFileOrDirectoryIfNotExists(problemsCounterPath);
-        problemsCounter = Integer.valueOf(readTextOrJsonFile(problemsCounterPath));
+        CommonUtils.createFileOrDirectoryIfNotExists(PROBLEMS_COUNTER_PATH);
+        problemsCounter = Integer.valueOf(CommonUtils.readTextOrJsonFile(PROBLEMS_COUNTER_PATH));
 
         // Create the algorithm file if it does not exist
         String apiFilePath = API_FILE_DIR + API_FILE_NAME;
-        createFileOrDirectoryIfNotExists(apiFilePath);
+        CommonUtils.createFileOrDirectoryIfNotExists(apiFilePath);
 
-        JsonNode algorithmsNode = readJsonData(apiFilePath, true);
-        if (!algorithmsNode.fields().hasNext() || 2000 > algorithmsNode.get(PROBLEMS_TOTAL.code).asInt()) {
+        JsonNode algorithmsNode = CommonUtils.readJsonData(apiFilePath, true);
+        if (!algorithmsNode.fields().hasNext() || 2000 > algorithmsNode.get(LeetCodeEnums.PROBLEMS_TOTAL.code).asInt()) {
             // replace the existing algorithms file only if the local version is empty or less than 2000 .
             String pageUrl = API_BASE_URL;
-            saveJsonData(pageUrl, apiFilePath, true);
+            CommonUtils.saveJsonData(pageUrl, apiFilePath, true);
             // Reload the file
-            algorithmsNode = readJsonData(apiFilePath, true);
+            algorithmsNode = CommonUtils.readJsonData(apiFilePath, true);
         }
 
-        totalProblemsForDownload = Math.max(problemsCounter, algorithmsNode.get(PROBLEMS_TOTAL.code).asInt());
+        totalProblemsForDownload = Math.max(problemsCounter, algorithmsNode.get(LeetCodeEnums.PROBLEMS_TOTAL.code).asInt());
 
-        problemsList = algorithmsNode.get(PROBLEMS_LIST.code);
+        problemsList = algorithmsNode.get(LeetCodeEnums.PROBLEMS_LIST.code);
 
     }
 
@@ -86,36 +69,37 @@ public class LeetCodeProcessor {
         for (int probs = (totalProblemsForDownload - 1); probs > 0; probs--) {
 
             JsonNode currentProblemNode = problemsList.get(probs);
-            if (counter > 5) break;
-            if (currentProblemNode.get(PROBLEM_IS_PAID.code).asBoolean()) {
+            if (counter > 9) break;
+            if (currentProblemNode.get(LeetCodeEnums.PROBLEM_IS_PAID.code).asBoolean()) {
+                // Skip problems that require paid access
                 counter++;
                 continue;
             }
-            JsonNode problemNode = currentProblemNode.get(PROBLEM.code);
-            int questionId = problemNode.get(PROBLEM_QUESTION_ID.code).asInt();
+            JsonNode problemNode = currentProblemNode.get(LeetCodeEnums.PROBLEM.code);
+            int questionId = problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_ID.code).asInt();
 
             problem = new LeetCodeProblem(questionId);
-            problem.setFrontEndId(problemNode.get(PROBLEM_QUESTION_ID_FRONTEND.code).asInt());
-            problem.setTitle(problemNode.get(PROBLEM_QUESTION_TITLE.code).asText());
-            problem.setTitleSlug(problemNode.get(PROBLEM_QUESTION_TITLE_SLUG.code).asText());
-            problem.setDifficultyLevel(currentProblemNode.get(PROBLEM_DIFFICULTY.code).get(PROBLEM_DIFFICULTY_LEVEL.code).asInt());
+            problem.setFrontEndId(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_ID_FRONTEND.code).asInt());
+            problem.setTitle(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_TITLE.code).asText());
+            problem.setTitleSlug(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_TITLE_SLUG.code).asText());
+            problem.setDifficultyLevel(currentProblemNode.get(LeetCodeEnums.PROBLEM_DIFFICULTY.code).get(LeetCodeEnums.PROBLEM_DIFFICULTY_LEVEL.code).asInt());
             problem.setDifficultyLevelName(problem.translateDifficultyIdToText(problem.getDifficultyLevel()));
-            problem.setClassName(problem.getTitle().replace(" ", ""));
+            problem.setClassName(CommonUtils.stripCharsAfterFirstSpecialChar(problem.getTitle().replace(" ", "")));
             problem.setDirectUrl(PROBLEMS_BASE_URL + problem.getTitleSlug());
             problem.setTextFileLocation(PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/" + problem.getClassName() + ".txt");
 
-//            if (fileExists(problem.getTextFileLocation())) {
-//                // This problem is already processed. Skip to the next.
-//                log.info("File '" + problem.getTextFileLocation() + "' already exists. Skipping to the next");
-//                counter++;
-//                continue;
-//            }
-
+            if (CommonUtils.fileExists(problem.getTextFileLocation())) {
+                // This problem is already processed. Skip to the next.
+                log.info("File '" + problem.getTextFileLocation() + "' already exists. Skipping to the next");
+                counter++;
+                continue;
+            }
+            // Download it
             downloadProblem();
-
-            String classContent = constructClassContent();
-
-            writeProblemToClassAndFile(classContent);
+            // Construct the content for the particular problem files
+            problem.setClassContent(constructClassContent());
+            // Save both class file and txt file (other file formats can be added later
+            writeProblemToClassAndFile();
 
             counter++;
         }
@@ -123,26 +107,26 @@ public class LeetCodeProcessor {
         if (counter > problemsCounter) {
             problemsCounter = counter;
         }
-        setUseResourcePath(true);
-        writeToFile(problemsCounterPath, problemsCounter.toString());
+        CommonUtils.setUseResourcePath(true);
+        CommonUtils.writeToFile(PROBLEMS_COUNTER_PATH, problemsCounter.toString());
     }
 
-    private void writeProblemToClassAndFile(String classContent) {
+    private void writeProblemToClassAndFile() {
 
         // Construct paths and write to a class file
-        String problemDirectoryForClass = "odogwudozilla/scrapers/" + PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/";
+        String problemDirectoryForClass = "odogwudozilla/" + PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/";
         problem.setClassFileLocation(problemDirectoryForClass + problem.getClassName() + ".java");
-        setUseResourcePath(false);
-        createFileOrDirectoryIfNotExists(problem.getClassFileLocation());
+        CommonUtils.setUseResourcePath(false);
+        CommonUtils.createFileOrDirectoryIfNotExists(problem.getClassFileLocation());
         // Write the content to the specified output file
-        writeToFile(problem.getClassFileLocation(), classContent);
+        CommonUtils.writeToFile(problem.getClassFileLocation(), problem.getClassContent());
         log.info("Problem text file written to " + problem.getClassFileLocation());
 
         // Construct paths and write to a text file
-        setUseResourcePath(true);
-        createFileOrDirectoryIfNotExists(problem.getTextFileLocation());
+        CommonUtils.setUseResourcePath(true);
+        CommonUtils.createFileOrDirectoryIfNotExists(problem.getTextFileLocation());
         // Write the content to the specified output file
-        writeToFile(problem.getTextFileLocation(), classContent);
+        CommonUtils.writeToFile(problem.getTextFileLocation(), problem.getClassContent());
         log.info("Problem text file written to " + problem.getTextFileLocation());
 
     }

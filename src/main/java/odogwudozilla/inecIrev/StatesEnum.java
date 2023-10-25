@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.inecIrev;
+package odogwudozilla.inecIrev;
 
 import java.util.List;
 

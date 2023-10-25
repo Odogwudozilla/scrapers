@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.leetcode.problems.hard;
+package odogwudozilla.leetcode.problems.hard;
 
 /**
  *<h2>No. 4: Median of Two Sorted Arrays</h2>

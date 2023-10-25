@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.helperClasses;
+package odogwudozilla.helperClasses;
 
 import java.io.File;
 import java.util.ArrayDeque;

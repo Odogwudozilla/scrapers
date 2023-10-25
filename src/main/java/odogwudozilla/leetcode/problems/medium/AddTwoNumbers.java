@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.leetcode.problems.medium;
+package odogwudozilla.leetcode.problems.medium;
 
 /**
  *<h2>No. 2: Add Two Numbers</h2>

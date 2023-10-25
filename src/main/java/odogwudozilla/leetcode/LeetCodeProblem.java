@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.leetcode;
+package odogwudozilla.leetcode;
 
 
 public class LeetCodeProblem {
@@ -13,6 +13,7 @@ public class LeetCodeProblem {
     private String classFileLocation;
     private String textFileLocation;
     private String directUrl;
+    private String classContent;
 
     // Create an HTML string to store the contents
     private  StringBuilder htmlString;
@@ -136,6 +137,14 @@ public class LeetCodeProblem {
 
     public void setDirectUrl(String directUrl) {
         this.directUrl = directUrl;
+    }
+
+    public String getClassContent() {
+        return classContent;
+    }
+
+    public void setClassContent(String classContent) {
+        this.classContent = classContent;
     }
 
 }

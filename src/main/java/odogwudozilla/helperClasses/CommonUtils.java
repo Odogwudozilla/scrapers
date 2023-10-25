@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.helperClasses;
+package odogwudozilla.helperClasses;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -117,6 +119,17 @@ public class CommonUtils {
     public static String appendResourceOrMainPath(String filePath) {
         return useResourcePath ? RESOURCE_DIRECTORY_PATH + filePath :
         MAIN_DIR_PATH + filePath;
+    }
+
+    public static String stripCharsAfterFirstSpecialChar(String input) {
+        Pattern pattern = Pattern.compile("^(.*?)[^a-zA-Z0-9]+.*$");
+        Matcher matcher = pattern.matcher(input);
+
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+
+        return input;
     }
 
     public static boolean fileExists(String filePath) {

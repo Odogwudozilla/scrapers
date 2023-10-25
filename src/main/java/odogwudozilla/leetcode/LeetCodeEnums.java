@@ -1,4 +1,4 @@
-package odogwudozilla.scrapers.leetcode;
+package odogwudozilla.leetcode;
 
 public enum LeetCodeEnums {
     PROBLEMS_TOTAL("num_total"),

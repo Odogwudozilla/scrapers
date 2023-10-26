@@ -94,11 +94,11 @@ public class LeetCodeProcessor {
                 counter++;
                 continue;
             }
-            // Download it
+            // Download the problem from its page.
             downloadProblem();
             // Construct the content for the particular problem files
             problem.setClassContent(constructClassContent());
-            // Save both class file and txt file (other file formats can be added later
+            // Save both class file and txt file (other file formats can be added later)
             writeProblemToClassAndFile();
 
             counter++;
@@ -137,7 +137,7 @@ public class LeetCodeProcessor {
         String titleSection = " *<h2>" + "No. " + problem.getFrontEndId() + ": " + problem.getTitle() + "</h2>\n" +
                               " *" + "Link: <em><a href=\"" + problem.getDirectUrl() + "\">" + problem.getTitle() + "</a></em>\n" +
                               " *" + "Difficulty: <strong>" + problem.getDifficultyLevelName() + "</strong>" +
-                              "<hr>\n\n";
+                              "<hr>\n\n"; // Horizontal line
 
         // Put the title and htmlString in comments
         StringBuilder commentLines = new StringBuilder("/**\n").append(titleSection);
@@ -176,7 +176,7 @@ public class LeetCodeProcessor {
         /// Explicitly wait for the "div.xFUwe" element to be present
         WebElement divElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.xFUwe")));
 
-        // Find all the p, pre, ul elements within the div
+        // Find all the p, pre, ul elements within the div.xFUwe
         List<WebElement> paragraphAndPreElements = divElement.findElements(By.cssSelector("p, pre, ul"));
         // Iterate through the list of paragraph elements and save their text outerHTML
         for (WebElement element : paragraphAndPreElements) {

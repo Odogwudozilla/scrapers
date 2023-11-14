@@ -7,8 +7,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.text.StrLookup;
+import org.apache.commons.text.StrSubstitutor;
+import org.apache.commons.text.WordUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +26,8 @@ import com.gargoylesoftware.htmlunit.WebRequest;
 import com.gargoylesoftware.htmlunit.WebResponse;
 
 public class CommonUtils {
+    private static final Logger log = LoggerFactory.getLogger(CommonUtils.class);
+
     // Get the project's base directory (the location of the pom.xml file in a maven project, for instance)
     public static final String PROJECT_BASE_DIRECTORY = System.getProperty("user.dir")  + File.separator
             + "src" + File.separator
@@ -46,12 +56,12 @@ public class CommonUtils {
                     fileOrDir.getParentFile().mkdirs(); // Create parent directories if needed
                     fileOrDir.createNewFile();
                 }
-                System.out.println("File or directory created at: " + path);
+                log.info("File or directory created at: {}", path);
             } catch (IOException e) {
-                System.err.println("Failed to create file or directory: " + e.getMessage());
+                log.error("Failed to create file or directory: {}", e.getMessage());
             }
         } else {
-            System.out.println("File or directory already exists at: " + path);
+            log.info("File or directory already exists at: {}", path);
         }
     }
 
@@ -102,6 +112,7 @@ public class CommonUtils {
             }
 
         } catch (IOException e) {
+            log.info("{}", e.getMessage());
             e.printStackTrace();
         }
 
@@ -111,7 +122,9 @@ public class CommonUtils {
     public static void writeToFile(String path, String content) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(appendResourceOrMainPath(path)))) {
             writer.write(content);
+            log.info("Object written to File {}", path);
         } catch (IOException e) {
+            log.info("{}", e.getMessage());
             e.printStackTrace();
         }
     }

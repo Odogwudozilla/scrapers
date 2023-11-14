@@ -3,7 +3,6 @@ package odogwudozilla.leetcode;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -11,8 +10,11 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.gargoylesoftware.htmlunit.WebClient;
 import odogwudozilla.helperClasses.CommonUtils;
 
 
@@ -23,12 +25,12 @@ public class LeetCodeProcessor {
     static final String API_FILE_DIR = "leetcode/algorithms/";
     static final String API_FILE_NAME = "algorithms.json";
     private static final String PROBLEMS_COUNTER_FILE_NAME = "problemsCounter.txt";
-    private Integer problemsCounter;
+    private Integer nrOfProcessedProblems;
     private static final String PROBLEMS_COUNTER_PATH = API_FILE_DIR + PROBLEMS_COUNTER_FILE_NAME;
     private Integer totalProblemsForDownload;
     private JsonNode problemsList;
     private LeetCodeProblem problem;
-    private static final Logger log = Logger.getLogger(LeetCodeProcessor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(LeetCodeProcessor.class);
 
     public LeetCodeProcessor() {
         // empty for now
@@ -36,45 +38,62 @@ public class LeetCodeProcessor {
 
     public static void main(String[] args) throws IOException {
         LeetCodeProcessor processor = new LeetCodeProcessor();
+        log.info("retrieveApiJson() - Starting retrieval of the API JSON... \n");
         processor.retrieveApiJson();
+        log.info("retrieveApiJson()- Retrieval of the API JSON complete... \n\n");
+
+        log.info("fillAndProcessProblem() - Starting fill and process... \n");
         processor.fillAndProcessProblem();
+        log.info("fillAndProcessProblem() - Fill and process complete... \n");
     }
 
     private void retrieveApiJson() throws IOException {
         CommonUtils.createFileOrDirectoryIfNotExists(PROBLEMS_COUNTER_PATH);
-        problemsCounter = Integer.valueOf(CommonUtils.readTextOrJsonFile(PROBLEMS_COUNTER_PATH));
+        nrOfProcessedProblems = Integer.valueOf(CommonUtils.readTextOrJsonFile(PROBLEMS_COUNTER_PATH));
+        log.info("Number of previously processed items: {}", nrOfProcessedProblems);
 
         // Create the algorithm file if it does not exist
         String apiFilePath = API_FILE_DIR + API_FILE_NAME;
         CommonUtils.createFileOrDirectoryIfNotExists(apiFilePath);
+        String pageUrl = API_BASE_URL;
 
-        JsonNode algorithmsNode = CommonUtils.readJsonData(apiFilePath, true);
-        if (!algorithmsNode.fields().hasNext() || 2000 > algorithmsNode.get(LeetCodeEnums.PROBLEMS_TOTAL.code).asInt()) {
-            // replace the existing algorithms file only if the local version is empty or less than 2000 .
-            String pageUrl = API_BASE_URL;
+        JsonNode algorithmsNodeFromFile = CommonUtils.readJsonData(apiFilePath, true);
+        JsonNode algorithmsNodeFromUrl = CommonUtils.readJsonData(CommonUtils.getJsonData(new WebClient(), pageUrl), false);
+
+        // replace the existing algorithms file only if the local version is empty, or it's problem size is less than the online version.
+        if (!algorithmsNodeFromFile.fields().hasNext()
+                || algorithmsNodeFromFile.get(LeetCodeEnums.PROBLEMS_TOTAL.code).asInt() < algorithmsNodeFromUrl.get(LeetCodeEnums.PROBLEMS_TOTAL.code).asInt()) {
+            // (re)Download the online version
             CommonUtils.saveJsonData(pageUrl, apiFilePath, true);
             // Reload the file
-            algorithmsNode = CommonUtils.readJsonData(apiFilePath, true);
+            algorithmsNodeFromFile = CommonUtils.readJsonData(apiFilePath, true);
         }
-
-        totalProblemsForDownload = Math.max(problemsCounter, algorithmsNode.get(LeetCodeEnums.PROBLEMS_TOTAL.code).asInt());
-
-        problemsList = algorithmsNode.get(LeetCodeEnums.PROBLEMS_LIST.code);
+        // Set other instance variables needed for further processing
+        totalProblemsForDownload = algorithmsNodeFromFile.get(LeetCodeEnums.PROBLEMS_TOTAL.code).asInt();
+        problemsList = algorithmsNodeFromFile.get(LeetCodeEnums.PROBLEMS_LIST.code);
 
     }
 
     private void fillAndProcessProblem() {
-        int counter = 0;
-        // Since the list of problems is in descending order, Start downloading from the last problem on the list
-        for (int probs = (totalProblemsForDownload - 1); probs > 0; probs--) {
+        int processedItemsCounter = 0;
+        int batchCount = nrOfProcessedProblems + 10; // We want to process only this number of items per run of this processor.
+
+        // Since the list of problems is in descending order, Start processing from the last problem on the list
+        int probs = totalProblemsForDownload - 1;
+        for (; probs > 0; probs--) {
 
             JsonNode currentProblemNode = problemsList.get(probs);
-            if (counter > 9) break;
+
+            if (batchCount == 0) break;
+
             if (currentProblemNode.get(LeetCodeEnums.PROBLEM_IS_PAID.code).asBoolean()) {
-                // Skip problems that require paid access
-                counter++;
+                // Skip problems that require paid access.
+                processedItemsCounter++;
+                batchCount--;
+                log.info("Problem '{}' is paid version only. Skipping...", currentProblemNode.get(LeetCodeEnums.PROBLEM.code).get(LeetCodeEnums.PROBLEM_QUESTION_TITLE.code).asText());
                 continue;
             }
+
             JsonNode problemNode = currentProblemNode.get(LeetCodeEnums.PROBLEM.code);
             int questionId = problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_ID.code).asInt();
 
@@ -90,25 +109,30 @@ public class LeetCodeProcessor {
 
             if (CommonUtils.fileExists(problem.getTextFileLocation())) {
                 // This problem is already processed. Skip to the next.
-                log.info("File '" + problem.getTextFileLocation() + "' already exists. Skipping to the next");
-                counter++;
+                log.info("File '{}' already exists. Skipping to the next", problem.getTextFileLocation());
+                processedItemsCounter++;
+                batchCount--;
                 continue;
             }
-            // Download it
+            // Download the problem from its specific page.
             downloadProblem();
             // Construct the content for the particular problem files
             problem.setClassContent(constructClassContent());
-            // Save both class file and txt file (other file formats can be added later
+            // Save both class file and txt file (other file formats can be added later)
             writeProblemToClassAndFile();
 
-            counter++;
+            processedItemsCounter++;
+            batchCount--;
+
         }
+
         // Update the problems counter
-        if (counter > problemsCounter) {
-            problemsCounter = counter;
+        if (processedItemsCounter > nrOfProcessedProblems) {
+            nrOfProcessedProblems = processedItemsCounter;
         }
         CommonUtils.setUseResourcePath(true);
-        CommonUtils.writeToFile(PROBLEMS_COUNTER_PATH, problemsCounter.toString());
+        CommonUtils.writeToFile(PROBLEMS_COUNTER_PATH, nrOfProcessedProblems.toString());
+
     }
 
     private void writeProblemToClassAndFile() {
@@ -120,14 +144,14 @@ public class LeetCodeProcessor {
         CommonUtils.createFileOrDirectoryIfNotExists(problem.getClassFileLocation());
         // Write the content to the specified output file
         CommonUtils.writeToFile(problem.getClassFileLocation(), problem.getClassContent());
-        log.info("Problem text file written to " + problem.getClassFileLocation());
+        log.info("Problem text file written to {}", problem.getClassFileLocation());
 
         // Construct paths and write to a text file
         CommonUtils.setUseResourcePath(true);
         CommonUtils.createFileOrDirectoryIfNotExists(problem.getTextFileLocation());
         // Write the content to the specified output file
         CommonUtils.writeToFile(problem.getTextFileLocation(), problem.getClassContent());
-        log.info("Problem text file written to " + problem.getTextFileLocation());
+        log.info("Problem text file written to {}", problem.getTextFileLocation());
 
     }
 
@@ -137,7 +161,7 @@ public class LeetCodeProcessor {
         String titleSection = " *<h2>" + "No. " + problem.getFrontEndId() + ": " + problem.getTitle() + "</h2>\n" +
                               " *" + "Link: <em><a href=\"" + problem.getDirectUrl() + "\">" + problem.getTitle() + "</a></em>\n" +
                               " *" + "Difficulty: <strong>" + problem.getDifficultyLevelName() + "</strong>" +
-                              "<hr>\n\n";
+                              "<hr>\n\n"; // Horizontal line
 
         // Put the title and htmlString in comments
         StringBuilder commentLines = new StringBuilder("/**\n").append(titleSection);
@@ -176,7 +200,7 @@ public class LeetCodeProcessor {
         /// Explicitly wait for the "div.xFUwe" element to be present
         WebElement divElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.xFUwe")));
 
-        // Find all the p, pre, ul elements within the div
+        // Find all the p, pre, ul elements within the div.xFUwe
         List<WebElement> paragraphAndPreElements = divElement.findElements(By.cssSelector("p, pre, ul"));
         // Iterate through the list of paragraph elements and save their text outerHTML
         for (WebElement element : paragraphAndPreElements) {
@@ -223,11 +247,11 @@ public class LeetCodeProcessor {
         }
 
 
-        System.out.println(classBody);
+        log.info("Contents of the class file\n: {}", classBody);
         problem.setClassBody(classBody.toString());
         problem.setHtmlString(htmlString);
 
-        log.info("Problem page '" + problem.getTitleSlug() + "' retrieved");
+        log.info("Problem page '{}' retrieved", problem.getTitleSlug());
         // We are done with this page. Close it.
         chromeDriver.quit();
     }

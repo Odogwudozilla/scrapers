@@ -8,13 +8,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.NumberFormat;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.text.StrLookup;
-import org.apache.commons.text.StrSubstitutor;
-import org.apache.commons.text.WordUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +130,16 @@ public class CommonUtils {
         MAIN_DIR_PATH + filePath;
     }
 
+    public static String formatTitleForClassName(String title) {
+        String cleanedTitle = stripCharsAfterFirstSpecialChar(title);
+
+        // The regex pattern to match all beginning numeric digits
+        Pattern pattern = Pattern.compile("^\\d+(?=\\D)");
+        return checkForLeadingDigits(cleanedTitle, pattern);
+    }
+
     public static String stripCharsAfterFirstSpecialChar(String input) {
+        // Regex to match all no
         Pattern pattern = Pattern.compile("^(.*?)[^a-zA-Z0-9]+.*$");
         Matcher matcher = pattern.matcher(input);
 
@@ -144,6 +149,23 @@ public class CommonUtils {
 
         return input;
     }
+
+    /**
+     * Processes a string by applying the regex pattern to match the digits at the beginning, appends a text prefix
+     * and returns the corresponding concatenation.
+     * @param input   The input string.
+     * @param pattern The regex pattern.
+     * @return The concatenated string pattern or original string if no match is found.
+     */
+    private static String checkForLeadingDigits(String input, Pattern pattern) {
+        Matcher matcher = pattern.matcher(input);
+        if (matcher.find()) {
+            return "The" + matcher.group() + input.substring(matcher.end());
+        }
+
+        return input;
+    }
+
 
     public static boolean fileExists(String filePath) {
         return new File(appendResourceOrMainPath(filePath)).exists();

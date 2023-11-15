@@ -25,8 +25,11 @@ public class LeetCodeProcessor {
     static final String API_FILE_DIR = "leetcode/algorithms/";
     static final String API_FILE_NAME = "algorithms.json";
     private static final String PROBLEMS_COUNTER_FILE_NAME = "problemsCounter.txt";
+    private static final String ERROR_FILE_NAME = "errorLog.txt";
     private Integer nrOfProcessedProblems;
+    private Integer processedItemsCounter;
     private static final String PROBLEMS_COUNTER_PATH = API_FILE_DIR + PROBLEMS_COUNTER_FILE_NAME;
+    private static final String ERROR_PATH = "leetcode/logs/" + ERROR_FILE_NAME;
     private Integer totalProblemsForDownload;
     private JsonNode problemsList;
     private LeetCodeProblem problem;
@@ -42,9 +45,18 @@ public class LeetCodeProcessor {
         processor.retrieveApiJson();
         log.info("retrieveApiJson()- Retrieval of the API JSON complete... \n\n");
 
-        log.info("fillAndProcessProblem() - Starting fill and process... \n");
-        processor.fillAndProcessProblem();
-        log.info("fillAndProcessProblem() - Fill and process complete... \n");
+        try {
+            log.info("fillAndProcessProblem() - Starting fill and process... \n");
+            processor.fillAndProcessProblem();
+            log.info("fillAndProcessProblem() - Fill and process complete... \n");
+
+        } catch (Exception e) {
+            // Always update the current state of processed problems on each exception
+            processor.saveNrProcessedItems(processor.processedItemsCounter, processor.nrOfProcessedProblems);
+            // Save the exception message in a log file
+            CommonUtils.setUseResourcePath(true);
+            CommonUtils.writeToFile(ERROR_PATH, e.getMessage());
+        }
     }
 
     private void retrieveApiJson() throws IOException {
@@ -75,8 +87,8 @@ public class LeetCodeProcessor {
     }
 
     private void fillAndProcessProblem() {
-        int processedItemsCounter = 0;
-        int batchCount = nrOfProcessedProblems + 10; // We want to process only this number of items per run of this processor.
+        processedItemsCounter = 0;
+        int batchCount = 200; // We want to process only this number of items per run of this processor.
 
         // Since the list of problems is in descending order, Start processing from the last problem on the list
         int probs = totalProblemsForDownload - 1;
@@ -103,7 +115,7 @@ public class LeetCodeProcessor {
             problem.setTitleSlug(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_TITLE_SLUG.code).asText());
             problem.setDifficultyLevel(currentProblemNode.get(LeetCodeEnums.PROBLEM_DIFFICULTY.code).get(LeetCodeEnums.PROBLEM_DIFFICULTY_LEVEL.code).asInt());
             problem.setDifficultyLevelName(problem.translateDifficultyIdToText(problem.getDifficultyLevel()));
-            problem.setClassName(CommonUtils.stripCharsAfterFirstSpecialChar(problem.getTitle().replace(" ", "")));
+            problem.setClassName(CommonUtils.formatTitleForClassName(problem.getTitle().replace(" ", "")));
             problem.setDirectUrl(PROBLEMS_BASE_URL + problem.getTitleSlug());
             problem.setTextFileLocation(PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/" + problem.getClassName() + ".txt");
 
@@ -127,11 +139,7 @@ public class LeetCodeProcessor {
         }
 
         // Update the problems counter
-        if (processedItemsCounter > nrOfProcessedProblems) {
-            nrOfProcessedProblems = processedItemsCounter;
-        }
-        CommonUtils.setUseResourcePath(true);
-        CommonUtils.writeToFile(PROBLEMS_COUNTER_PATH, nrOfProcessedProblems.toString());
+        saveNrProcessedItems(processedItemsCounter, nrOfProcessedProblems);
 
     }
 
@@ -254,6 +262,14 @@ public class LeetCodeProcessor {
         log.info("Problem page '{}' retrieved", problem.getTitleSlug());
         // We are done with this page. Close it.
         chromeDriver.quit();
+    }
+
+    private void saveNrProcessedItems(int itemsProcessed, Integer problemsProccessed) {
+        if (itemsProcessed > problemsProccessed) {
+            problemsProccessed = itemsProcessed;
+        }
+        CommonUtils.setUseResourcePath(true);
+        CommonUtils.writeToFile(PROBLEMS_COUNTER_PATH, problemsProccessed.toString());
     }
 
     private void waitUntil(WebDriverWait wait, Duration duration) {

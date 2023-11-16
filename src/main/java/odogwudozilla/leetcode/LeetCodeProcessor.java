@@ -47,9 +47,10 @@ public class LeetCodeProcessor {
 
         try {
             log.info("fillAndProcessProblem() - Starting fill and process... \n");
-            processor.fillAndProcessProblem();
+            processor.processProblem();
             log.info("fillAndProcessProblem() - Fill and process complete... \n");
 
+        // Catch a general exception as any of several could occur while processing.
         } catch (Exception e) {
             // Always update the current state of processed problems on each exception
             processor.saveNrProcessedItems(processor.processedItemsCounter, processor.nrOfProcessedProblems);
@@ -86,7 +87,7 @@ public class LeetCodeProcessor {
 
     }
 
-    private void fillAndProcessProblem() {
+    private void processProblem() {
         processedItemsCounter = 0;
         int batchCount = 200; // We want to process only this number of items per run of this processor.
 
@@ -102,22 +103,12 @@ public class LeetCodeProcessor {
                 // Skip problems that require paid access.
                 processedItemsCounter++;
                 batchCount--;
-                log.info("Problem '{}' is paid version only. Skipping...", currentProblemNode.get(LeetCodeEnums.PROBLEM.code).get(LeetCodeEnums.PROBLEM_QUESTION_TITLE.code).asText());
+                log.info("Problem '{}' is paid version only. Skipping...",
+                        currentProblemNode.get(LeetCodeEnums.PROBLEM.code).get(LeetCodeEnums.PROBLEM_QUESTION_TITLE.code).asText());
                 continue;
             }
-
-            JsonNode problemNode = currentProblemNode.get(LeetCodeEnums.PROBLEM.code);
-            int questionId = problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_ID.code).asInt();
-
-            problem = new LeetCodeProblem(questionId);
-            problem.setFrontEndId(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_ID_FRONTEND.code).asInt());
-            problem.setTitle(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_TITLE.code).asText());
-            problem.setTitleSlug(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_TITLE_SLUG.code).asText());
-            problem.setDifficultyLevel(currentProblemNode.get(LeetCodeEnums.PROBLEM_DIFFICULTY.code).get(LeetCodeEnums.PROBLEM_DIFFICULTY_LEVEL.code).asInt());
-            problem.setDifficultyLevelName(problem.translateDifficultyIdToText(problem.getDifficultyLevel()));
-            problem.setClassName(CommonUtils.formatTitleForClassName(problem.getTitle().replace(" ", "")));
-            problem.setDirectUrl(PROBLEMS_BASE_URL + problem.getTitleSlug());
-            problem.setTextFileLocation(PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/" + problem.getClassName() + ".txt");
+            // Fill the preliminary fields for the current problem
+            problem = fillProblem(currentProblemNode);
 
             if (CommonUtils.fileExists(problem.getTextFileLocation())) {
                 // This problem is already processed. Skip to the next.
@@ -141,6 +132,21 @@ public class LeetCodeProcessor {
         // Update the problems counter
         saveNrProcessedItems(processedItemsCounter, nrOfProcessedProblems);
 
+    }
+
+    private LeetCodeProblem fillProblem(JsonNode currentProblemNode) {
+        JsonNode problemNode = currentProblemNode.get(LeetCodeEnums.PROBLEM.code);
+        problem = new LeetCodeProblem(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_ID.code).asInt());
+        problem.setFrontEndId(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_ID_FRONTEND.code).asInt());
+        problem.setTitle(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_TITLE.code).asText());
+        problem.setTitleSlug(problemNode.get(LeetCodeEnums.PROBLEM_QUESTION_TITLE_SLUG.code).asText());
+        problem.setDifficultyLevel(currentProblemNode.get(LeetCodeEnums.PROBLEM_DIFFICULTY.code).get(LeetCodeEnums.PROBLEM_DIFFICULTY_LEVEL.code).asInt());
+        problem.setDifficultyLevelName(problem.translateDifficultyIdToText(problem.getDifficultyLevel()));
+        problem.setClassName(CommonUtils.formatTitleForClassName(problem.getTitle().replace(" ", "")));
+        problem.setDirectUrl(PROBLEMS_BASE_URL + problem.getTitleSlug());
+        problem.setTextFileLocation(PROBLEMS_DIR + problem.getDifficultyLevelName().toLowerCase() + "/" + problem.getClassName() + ".txt");
+
+        return problem;
     }
 
     private void writeProblemToClassAndFile() {
